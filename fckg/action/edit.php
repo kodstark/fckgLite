@@ -213,6 +213,13 @@ class action_plugin_fckg_edit extends DokuWiki_Action_Plugin {
         $text=preg_replace("#(?<=http://)(.*?)(?=lib/plugins/fckg/fckeditor/editor/images/smiley/msn)#s", $new_addr,$text);
      }
 
+      global $useComplexTables;
+      if($this->getConf('complex_tables') || strpos($text, '~~COMPLEX_TABLES~~') !== false) {     
+          $useComplexTables=true;
+      }
+      else {
+         $useComplexTables=false;
+      }
       if(strpos($text, '%%') !== false) {     
          $text= preg_replace_callback(
             '/(<nowiki>)*(\s*)%%\s*([^%]+)\s*%%(<\/nowiki>)*(\s*)/ms',
@@ -629,6 +636,11 @@ global $INFO;
                  /><span id='fckg_timer_label'
                     style = 'display:none'>Disable editor time-out messsages </span> 
 
+     <?php  //global $useComplexTables;  if(!$useComplexTables) { ?>               
+        <input type="checkbox" name="complex_tables" value="complex_tables"  id = "complex_tables"                      
+                          onclick="setComplexTables(1);"                      
+                     /><span id='complex_tables_label'> Enable Complex Tables (<a href="https://www.dokuwiki.org/plugin:fckglite#table_handling" target='_blank'>what's this?</a>)</span> 
+     <?php //} ?>              
 
       <input style="display:none;" class="button" id="edbtn__save" type="submit" name="do[save]" 
                       value="<?php echo $lang['btn_save']?>" 
@@ -648,7 +660,7 @@ global $INFO;
   <script type="text/javascript">
 //<![CDATA[
         
-
+       
         <?php  echo 'var backup_empty = "' . $fckg_lang['backup_empty'] .'";'; ?>
 
         function aspell_window() {
@@ -670,8 +682,23 @@ global $INFO;
            document.getElementById('wiki__text___Frame').style.height = height + 'px'; 
    
         }
+        
+   
+   setComplexTables = (function() {
+   var on=false;
+   
+     return function(b) {
+        if(b) on = !on; 
+        return on;
+     };
+    
+     })();
 
+    <?php  global $useComplexTables;  if($useComplexTables) { ?>               
+        document.getElementById('complex_tables').click();            
+    <?php } ?>  
 
+   
 var fckgLPluginPatterns = new Array();
 
 <?php
@@ -769,6 +796,143 @@ RegExp.escape = function(str)
 
 var HTMLParser_DEBUG = "";
 function parse_wikitext(id) {
+
+   var useComplexTables = setComplexTables();   
+   
+    var this_debug;
+    
+    function show_rowspans(rows) {
+    
+    <?php if(!$this->debug) { ?>
+     return;   
+    <?php } ?>
+    
+    if(!useComplexTables) return;   
+    var str = "";
+ 
+    for(var i=0; i < rows.length; i++) {     
+       str+="ROW" + i + "\n"; 
+
+              for(var col=0; col<rows[i].length; col++) {                                  
+                           str += "[" + col + "]";
+                           str+=   "text="+rows[i][col].text + " ";           
+                           str+="  type="+rows[i][col].type + " ";           
+                           str+= "  rowspan=" +rows[i][col].rowspan + "  ";                      
+                           str+= "  colspan=" +rows[i][col].colspan + "  ";                      
+              }   
+              str += "\n";
+        }
+ 
+     
+       this_debug(str,'show_rowspans');
+        
+    }     
+    
+    function debug_row(rows,row,col,which) {
+    <?php if(!$this->debug) { ?>
+     return;   
+    <?php } ?>
+
+    var not_found = "";
+    try {
+         this_debug("row:"+row
+                         +",column:"+col
+                         +", rowspans:"+ rows[row][col].rowspan
+                         +", colspans:"+ rows[row][col].colspan                         
+                         +", text:"+rows[row][col].text,                         
+                         which);
+        }catch(ex) {
+            not_found+="row:"+row +",column:"+col;
+        }
+        if(not_found) this_debug(not_found,"not_found");
+    }
+    
+    function check_rowspans(rows,start_row, ini) {
+        var tmp=new Array();    
+        for(var i=start_row; i < rows.length; i++) {                    
+                  for(var col=0; col<rows[i].length; col++) {    
+                        if(rows[i][col].rowspan > 0) {
+                              var text = rows[i][col].text;                                                         
+                              tmp.push({row:i,column:col, spans: rows[i][col].rowspan});         
+                              if(!ini) break;
+                        }   
+                  }   
+            }
+        return tmp;
+    }    
+
+    function insert_rowspan(row,col,spans,rows,shift) {
+              
+        var prev_colspans = rows[row][col].colspan ? rows[row][col].colspan: 0;            
+        
+          for(i=0; i<spans-1;i++) {     
+          //debug_row(rows,row,col,"insert_rowspan start");
+           rows[++row].splice(col, 0,{type:'td', rowspan:0,colspan:prev_colspans,prev_colspan:prev_colspans,text:" ::: "});
+           /*
+            if(rows[row][col+1] && rows[row][col+1].text) {            
+                 if(rows[row][col+1].text.match(/_FCKG_BLANK_TD_/)) {            
+                 //   rows[row].splice(col+1,1);
+                 }
+            }
+            */
+          }
+    } 
+ 
+   function reorder_span_rows(rows) {
+        var tmp = check_rowspans(rows,0,true);   
+        var num_spans = tmp.length;   
+        if(!num_spans) return;
+        
+        var row =   tmp[0].row;
+        var col = tmp[0].column;
+        insert_rowspan(row,col,tmp[0].spans,rows); 
+       
+       num_spans--;       
+       for(var i=0; i < num_spans; i++) {
+             row++;
+            var tmp = check_rowspans(rows,row,false);   
+            if(tmp.length && tmp[i]) {
+                var row =   tmp[i].row;
+                var col = tmp[i].column;
+                insert_rowspan(row,col,tmp[i].spans,rows);  
+            }
+       }
+       
+   }
+   
+   function insert_table(rows) {
+       if(!useComplexTables) return;
+        //show_rowspans(rows)
+        reorder_span_rows(rows);
+        results+="\n";
+        for(var i=0; i < rows.length; i++) {                    
+                  results+="\n";
+                  for(var col=0; col<rows[i].length; col++) {                           
+                     var type = rows[i][col].type == 'td'? '|': '^';                    
+                     results+= type;   
+                     var align = rows[i][col].align ? rows[i][col].align : false;                    
+                     if(align == 'center' || align == 'right') {
+                         results += "  ";
+                     }
+ 
+                     results += rows[i][col].text;
+                     if(align == 'center' || align == 'left') {
+                          results += "  ";
+                     }
+ 
+                     if(rows[i][col].colspan) {                     
+                     for(var n=0; n < rows[i][col].colspan-1; n++) {                              
+                               results+=type;
+                          }
+                     }
+                  }   
+                  
+                   results += '|';
+                
+               }   
+   }
+   
+ 
  window.dwfckTextChanged = false;
  if(id != 'bakup')  draft_delete();
  var line_break = "\nL_BR_K  \n";
@@ -808,6 +972,7 @@ function parse_wikitext(id) {
     var HTMLParser_NOWIKI = false;
     var HTMLFormatInList = false;
     var HTMLAcroInList = false;
+    var CurrentTable;
 
     var HTMLParserTopNotes = new Array();
     var HTMLParserBottomNotes = new Array();
@@ -828,8 +993,12 @@ function parse_wikitext(id) {
     td_rowspan: 0,
     rowspan_col: 0, 
     last_column: -1,
+    row:0,
+    col:0,
+   // table_start: false,
     td_no: 0,
     tr_no: 0,
+    current_row:false,
     in_table: false,
     in_multi_plugin: false,
     is_rowspan: false,
@@ -858,7 +1027,7 @@ function parse_wikitext(id) {
     link_only: false,
 	in_font: false,
 	interwiki: false,
-
+    
     backup: function(c1,c2) {
         var c1_inx = results.lastIndexOf(c1);     // start position of chars to delete
         var c2_inx = results.indexOf(c2,c1_inx);  // position of expected next character
@@ -873,7 +1042,7 @@ function parse_wikitext(id) {
     },
 
     start: function( tag, attrs, unary ) {
-
+    this_debug = this.dbg;
     if(markup[tag]) {   
       if(format_chars[tag] && this.in_link) {                 
                   this.link_formats.push(tag);
@@ -952,13 +1121,25 @@ function parse_wikitext(id) {
         this.tr_no = 0;
         this.in_table = true; 
         this.is_rowspan = false;
+        this.row=-1;         
+        this.rows = new Array();
+        CurrentTable = this.rows;     
+        this.table_start = results.length;
        }
        else if(tag == 'tr') {
            this.tr_no++;
            this.td_no = 0;         
+           this.col=-1;
+           this.row++;
+           this.rows[this.row] = new Array();
+           this.current_row = this.rows[this.row];
        }
        else if(tag == 'td' || tag == 'th') { 
           this.td_no++;           
+          this.col++;
+          this.current_row[this.col] = {type:tag, rowspan:0,colspan:0,text:""};       
+          this.cell_start = results.length;          
+          this.current_cell = this.current_row[this.col];
           if(this.td_rowspan && this.rowspan_col == this.td_no && this.td_no != this.last_column) {
                this.is_rowspan = true;   
                this.td_rowspan --;
@@ -981,6 +1162,20 @@ function parse_wikitext(id) {
         for ( var i = 0; i < attrs.length; i++ ) {     
     
           // if(!confirm(tag + ' ' + attrs[i].name + '="' + attrs[i].escaped + '"')) exit;
+             if(tag == 'td' || tag == 'th') {
+          //   if(!confirm(tag + ' ' + attrs[i].name + '="' + attrs[i].escaped + '"')) exit;
+                 if(attrs[i].name  =='colspan') {
+                     this.current_row[this.col].colspan = attrs[i].value;
+                 }    
+                 if(attrs[i].name  =='class') {                
+                     if((matches=attrs[i].value.match(/(left|center|right)/))) {
+                        this.current_row[this.col].align = matches[1];
+                     }
+                 }
+             if(attrs[i].name == 'rowspan') {
+                  this.current_row[this.col].rowspan= attrs[i].value
+               } 
+            }
              if(attrs[i].escaped == 'u' && tag == 'em' ) {
                      tag = 'u';
                      this.attr='u'    
@@ -1074,11 +1269,12 @@ function parse_wikitext(id) {
               }
               else if(attrs[i].name == 'colspan') {
                   HTMLParser_COLSPAN = true;
-                  this.td_colspan =attrs[i].escaped;                
+                  this.td_colspan =attrs[i].escaped;                                  
               }
-              else if(attrs[i].name == 'rowspan') {
+              else if(attrs[i].name == 'rowspan') {                
                   this.td_rowspan =attrs[i].escaped-1; 
-                  this.rowspan_col = this.td_no;                
+                  this.rowspan_col = this.td_no;   
+                  
               }
 
                 HTMLParser_TABLE=true;
@@ -1666,7 +1862,11 @@ function parse_wikitext(id) {
          this.downloadable_code = false;
          return;
      }
-
+     if(useComplexTables &&  (tag == 'td' || tag == 'th')) {       
+          this.current_cell.text = results.substring(this.cell_start);
+           this.current_cell.text = this.current_cell.text.replace(/:::/gm,"");          
+           this.current_cell.text = this.current_cell.text.replace(/^[\s\|\^]+/,"");   
+     }
      if(tag == 'a' && (this.export_code || this.code_snippet)) {
           this.export_code = false;
           this.code_snippet = false;
@@ -1684,8 +1884,12 @@ function parse_wikitext(id) {
          return; 
      }
      else if(tag == 'table') {
-        this.in_table = false;  
-       }
+        this.in_table = false;        
+        if(useComplexTables ) {
+            results = results.substring(0, this.table_start);
+            insert_table(this.rows); 
+         }   
+     }
 
      if(tag == 'p' && this.in_table) {              
               tag = 'p_insert';
@@ -1756,6 +1960,7 @@ function parse_wikitext(id) {
             this.last_col_pipes = "";
        }
 
+
      if(this.td_rowspan && this.rowspan_col == this.td_no+1) {
                this.is_rowspan = false;   
                this.last_column = this.td_no; 
@@ -1772,13 +1977,13 @@ function parse_wikitext(id) {
            this.in_header = false;
     }
 
- 
+   
     if(markup['li']) { 
 
          if(results.match(/\n$/)) {
                   tag = "";
         }
-     // if(current_tag != 'li') markup['li'] = "";
+  
      }
 
      if(this.in_link && format_chars[current_tag] && this.link_formats.length) {            
@@ -1797,7 +2002,7 @@ function parse_wikitext(id) {
        }
         this.last_tag = current_tag;
 
-        if(this.td_colspan) {    
+        if(this.td_colspan && !useComplexTables) {    
             if(this.td_align == 'center') results += ' ';    
             var _colspan = "|";            
             if(current_tag == 'th')
@@ -1845,7 +2050,7 @@ function parse_wikitext(id) {
     },
 
     chars: function( text ) {
-	
+//	alert(text);
 	if(this.interwiki && results.match(/>\w+\s*\|$/)) 	{	 
 	    this.interwiki=false;
 	    results=results.replace(/>\w+\s*\|$/,'>'+text);	
@@ -2009,7 +2214,7 @@ function parse_wikitext(id) {
     }
     );
 
-
+    //show_rowspans(CurrentTable);
     for(var i=0; i < fckgLPluginPatterns.length; i++) {
       fckgLPluginPatterns[i].pat = fckgLPluginPatterns[i].pat.replace(/\|/g,"\\|");
       fckgLPluginPatterns[i].pat = fckgLPluginPatterns[i].pat.replace(/([\.\?\[\]])/g, "\\$1");

@@ -1,4 +1,4 @@
-rev 12-Aug_28-10_17
+rev 12-Sep_16-12_04
 
 6 June
 Upgraded from FCKeditor 2.4.1 to 2.6.6.  2.6.6 includes the scayt spellchecker, which is an in-editor spellchecker.
@@ -50,3 +50,11 @@ This was needed by IE 10.
 Implemented option to rewrite FCKeditor smiley URLs when pages are moved to new server. Regex at top of
 edit.php:_preprocess.  The URLs are reset on a page by page basis when loaded and saved.  The option
 should be turned off except when needed.
+
+16 September 2012
+Added experimental handling of tables, attempting to solve problems in rendering complex tables that have multiple col and row spans.
+This uses a new configuration option which will turn on the experimenmtal algorithm for all pages, or it can be turned
+on, on a per-page basis, either by use of a checkbox or by adding a syntax plugin style switch to the top of the page:
+~~COMPLEX_TABLES~~.  Since ~~COMPLEX_TABLES~~ is implemented as a syntax plugin, it will come into effect only after the page
+has been saved; before the save, the user should check off the complex tables checkbox.  The logorithm is not perfect, but it is
+considerably superior to the standard table-handling parser.

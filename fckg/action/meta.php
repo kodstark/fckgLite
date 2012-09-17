@@ -60,7 +60,7 @@ class action_plugin_fckg_meta extends DokuWiki_Action_Plugin {
 
   // restore preview button if standard DW editor is in place
   // $FCKG_show_preview is set in edit.php in the register() function
- if($_REQUEST['fck_preview_mode'] != 'nil' && !isset($_COOKIE['FCKW_USE'])) {    
+if($_REQUEST['fck_preview_mode'] != 'nil' && !isset($_COOKIE['FCKW_USE']) && !$FCKG_show_preview) {    
      echo '<style type="text/css">#edbtn__preview { display:none; }</style>';
  }
  elseif($FCKG_show_preview) {
