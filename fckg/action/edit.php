@@ -456,7 +456,7 @@ class action_plugin_fckg_edit extends DokuWiki_Action_Plugin {
 ?>
 
  
-   <form id="dw__editform" method="post" action="<?php echo script()?>"  "accept-charset="<?php echo $lang['encoding']?>">
+   <form id="dw__editform" method="post" action="<?php echo script()?>"  accept-charset="<?php echo $lang['encoding']?>">
     <div class="no">
       <input type="hidden" name="id"   value="<?php echo $ID?>" />
       <input type="hidden" name="rev"  value="<?php echo $REV?>" />
@@ -801,11 +801,9 @@ function parse_wikitext(id) {
    
     var this_debug;
     
-    function show_rowspans(rows) {
+    <?php if($this->debug) { ?>
     
-    <?php if(!$this->debug) { ?>
-     return;   
-    <?php } ?>
+    function show_rowspans(rows) {
     
     if(!useComplexTables) return;   
     var str = "";
@@ -826,12 +824,18 @@ function parse_wikitext(id) {
      
        this_debug(str,'show_rowspans');
         
+         str = "";
+       for(var i=0; i < rows.length; i++) {
+              for(var col=0; col<rows[i].length; col++) {                          
+                    str+=   "|"+rows[i][col].text + " ";
+              }
+              str += "|\n";
+        }
+        this_debug(str,'show_rowspans');
+        
     }     
     
     function debug_row(rows,row,col,which) {
-    <?php if(!$this->debug) { ?>
-     return;   
-    <?php } ?>
 
     var not_found = "";
     try {
@@ -846,14 +850,14 @@ function parse_wikitext(id) {
         }
         if(not_found) this_debug(not_found,"not_found");
     }
-    
+    <?php } ?>
     function check_rowspans(rows,start_row, ini) {
         var tmp=new Array();    
         for(var i=start_row; i < rows.length; i++) {                    
                   for(var col=0; col<rows[i].length; col++) {    
                         if(rows[i][col].rowspan > 0) {
-                              var text = rows[i][col].text;                                                         
-                              tmp.push({row:i,column:col, spans: rows[i][col].rowspan});         
+                              var _text = rows[i][col].text;                                                         
+                              tmp.push({row:i,column:col, spans: rows[i][col].rowspan,text:_text});         
                               if(!ini) break;
                         }   
                   }   
@@ -864,46 +868,44 @@ function parse_wikitext(id) {
     function insert_rowspan(row,col,spans,rows,shift) {
               
         var prev_colspans = rows[row][col].colspan ? rows[row][col].colspan: 0;            
-        
+        rows[row][col].rowspan = 0;
           for(i=0; i<spans-1;i++) {     
           //debug_row(rows,row,col,"insert_rowspan start");
            rows[++row].splice(col, 0,{type:'td', rowspan:0,colspan:prev_colspans,prev_colspan:prev_colspans,text:" ::: "});
-           /*
-            if(rows[row][col+1] && rows[row][col+1].text) {            
-                 if(rows[row][col+1].text.match(/_FCKG_BLANK_TD_/)) {            
-                 //   rows[row].splice(col+1,1);
-                 }
-            }
-            */
+
           }
     } 
  
+ 
+  
    function reorder_span_rows(rows) {
-        var tmp = check_rowspans(rows,0,true);   
-        var num_spans = tmp.length;   
-        if(!num_spans) return;
+        var tmp_start = check_rowspans(rows,0,true);   
+        var num_spans = tmp_start.length;   
+        if(!num_spans) return false;
+
         
-        var row =   tmp[0].row;
-        var col = tmp[0].column;
-        insert_rowspan(row,col,tmp[0].spans,rows); 
-       
+        var row =   tmp_start[0].row;
+        var col = tmp_start[0].column;
+        insert_rowspan(row,col,tmp_start[0].spans,rows); 
+        
        num_spans--;       
        for(var i=0; i < num_spans; i++) {
              row++;
             var tmp = check_rowspans(rows,row,false);   
-            if(tmp.length && tmp[i]) {
-                var row =   tmp[i].row;
-                var col = tmp[i].column;
-                insert_rowspan(row,col,tmp[i].spans,rows);  
+            if(tmp.length) {
+                insert_rowspan(tmp[0].row,tmp[0].column,tmp[0].spans,rows);  
             }
        }
-       
+       return true;
+ 
    }
    
    function insert_table(rows) {
        if(!useComplexTables) return;
-        //show_rowspans(rows)
-        reorder_span_rows(rows);
+        for(var i=0; i<rows.length;i++) {
+          if(!reorder_span_rows(rows)) break;;
+        }
+      
         results+="\n";
         for(var i=0; i < rows.length; i++) {                    
                   results+="\n";
