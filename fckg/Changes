@@ -1,4 +1,4 @@
-rev 12-Sep_19-20_23
+rev 12-Oct_09-10_22
 
 6 June
 Upgraded from FCKeditor 2.4.1 to 2.6.6.  2.6.6 includes the scayt spellchecker, which is an in-editor spellchecker.
@@ -66,4 +66,7 @@ Minor edit to edit.php
 Created loop in insert_table() that goes through all rows checking for rowspans. Rowspan property of rows array is set to 0 for
 all rows where rowspans have been processed, causing them to be ignored on subsequent passes of loop.
 
-Minor edit to edit.php edito form syntax
+Minor edit to edit.php editor form syntax
+
+9 October 2012
+Fixed bug where table markup inside code blocks dropped empty cells (edit.php::_preprocess)
