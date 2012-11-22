@@ -169,6 +169,7 @@ function check_userfiles() {
 	}
 	
     global $INFO;
+    global $conf;
 	$userfiles = DOKU_PLUGIN . 'fckg/fckeditor/userfiles/';
     $data_media = DOKU_INC.'data/media/';
 	
@@ -187,6 +188,9 @@ function check_userfiles() {
 				
 	if (function_exists('php_uname')) {
 	   $sys = php_uname() ;
+       if((strpos(strtolower($sys), 'ubuntu') !== false) || (strpos(strtolower($sys), 'debian') !== false)) {
+          $data_media = $conf['savedir']  . '/media/';
+       }
 	   if( preg_match('/Windows/i',  $sys) ) {
 		     preg_match('/build\s+(\d+)/',$sys, $matches);	  
 		    if($matches[1]  < 6000) {  // we can make symlinks for vista (6000) or later 
