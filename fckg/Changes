@@ -1,4 +1,4 @@
-rev 12-Nov_21-08_27
+rev 12-Nov_25-16_26
 
 6 June
 Upgraded from FCKeditor 2.4.1 to 2.6.6.  2.6.6 includes the scayt spellchecker, which is an in-editor spellchecker.
@@ -76,3 +76,6 @@ Added session_id check to config.php:  in some system setting session which has 
 an error.
 Added $mssg="" to FileUpload() in commands.php for SendUploadResults(), without which some systems freeze.
 Both of the above occurred on Windows with PHP 5.3
+
+25
+Improved mime-type handling in config.php and fckconfig.js

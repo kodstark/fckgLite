@@ -1,4 +1,4 @@
-﻿9/*
+﻿/*
  * FCKeditor - The text editor for Internet - http://www.fckeditor.net
  * Copyright (C) 2003-2007 Frederico Caldeira Knabben
  *
@@ -488,11 +488,9 @@ function get_image_extensions(){
 	ajx.onCompletion = function() {
 	    if(ajx.responseStatus && ajax.responseStatus[0] == 200) {
 		    var image_types = ajx.response;
-			if(image_types.length>6) {
+		    if(image_types)
 			    FCKConfig.ImageUploadAllowedExtensions	= '.(' + image_types+ ')$' ;		
 			}
-			
-		}
 	};
 	ajx.runAJAX();
 }
