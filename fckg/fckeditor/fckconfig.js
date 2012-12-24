@@ -1,4 +1,4 @@
-﻿/*
+/*
  * FCKeditor - The text editor for Internet - http://www.fckeditor.net
  * Copyright (C) 2003-2007 Frederico Caldeira Knabben
  *
@@ -54,6 +54,7 @@ if(test_cookie('SCAYT', 'on')) {
 FCKConfig.CustomConfigurationsPath = '' ;
 
 FCKConfig.EditorAreaCSS = FCKConfig.BasePath + 'css/fck_editorarea.css' ;
+FCKConfig.EditorAreaIEHackCSS = FCKConfig.BasePath + 'css/ie_hack.css' ;
 FCKConfig.EditorAreaStyles = '' ;
 FCKConfig.ToolbarComboPreviewCSS = '' ;
 
@@ -482,15 +483,16 @@ FCKConfig.Geshi_Types = new Array(
 
 
 function get_image_extensions(){
-    var ajx = new sack();
+    var ajx = new sack();    
 	ajx.requestFile =  "../extensions.php";
 	ajx.method = 'POST';
 	ajx.onCompletion = function() {
 	    if(ajx.responseStatus && ajax.responseStatus[0] == 200) {
-		    var image_types = ajx.response;
+		    var image_types = ajx.response;		
 		    if(image_types)
-			    FCKConfig.ImageUploadAllowedExtensions	= '.(' + image_types+ ')$' ;		
-			}
+		        FCKConfig.ImageUploadAllowedExtensions	= '.(' + image_types+ ')$' ;		
+		    } 		    
+		
 	};
 	ajx.runAJAX();
 }

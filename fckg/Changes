@@ -1,4 +1,4 @@
-rev 12-Dec_08-10_21
+rev 12-Dec_23-23_06
 
 6 June
 Upgraded from FCKeditor 2.4.1 to 2.6.6.  2.6.6 includes the scayt spellchecker, which is an in-editor spellchecker.
@@ -94,3 +94,15 @@ Added two  short-cut keys for numbered list: ctrl-+ and ctrl+{.  Both do the sam
 In edit.php: insert this.is_smiley = false after alt (text form of smiley) is added to results;
 prevents corruption of text formats and insertion of javascript 'undefined' when alt is not found
 on next time through start()
+
+Dec 21 2012
+Updated css for new template
+
+Dec 22
+Updated fck_editorarea.css.new_template for code blocks
+
+
+23 December
+Replaced default fck_editorarea.css with original that was accidentally exchanged for the new
+
+Created an IE CSS hack for geshi snippets in IE8+ and HTML5
