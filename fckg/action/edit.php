@@ -1770,6 +1770,10 @@ function parse_wikitext(id) {
                 HTMLParserTopNotes.push(this.id);
           }
           else if(tag == 'a' && this.external_mime) {
+               if(this.in_endnotes) {
+                    this.link_class = 'media';
+                    return;             
+                 }
                results += markup['img'];
                if(this.attr) {
                    results += this.attr + '|';
@@ -2184,7 +2188,10 @@ function parse_wikitext(id) {
      if(text.match(/\w/) && ! text.match(/\d\)/)) {
         var index = HTMLParserTopNotes.length-1; 
         if(this.bottom_url)  { 
-            text = '[[' + this.bottom_url + '|' +text +']]';           
+            if(this.link_class && this.link_class == 'media') {
+                text = '{{' + this.bottom_url + '|' +text +'}}';           
+            }
+            else text = '[[' + this.bottom_url + '|' +text +']]';           
          }   
         if(HTMLParserBottomNotes[HTMLParserTopNotes[index]]) {
            HTMLParserBottomNotes[HTMLParserTopNotes[index]] += ' ' + text;
