@@ -1,4 +1,4 @@
-rev 13-Jan_04-13_22
+rev 13-Jan_04-18_26
 
 6 June
 Upgraded from FCKeditor 2.4.1 to 2.6.6.  2.6.6 includes the scayt spellchecker, which is an in-editor spellchecker.
@@ -113,3 +113,7 @@ Fix for nested lists in webkit browsers
 2013 January 4
 Fix for urls in DW footnotes, which were lost on re-saves.
 Still-to-be-done: handling of media files in DW footnotes
+
+Jan 4
+fix to DW footnote handling to prevent url from being transferred to subsequent fotnote text
+after update to previous notes's url using link tool.
